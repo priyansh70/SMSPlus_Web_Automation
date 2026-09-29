@@ -1,0 +1,22 @@
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+/allure-report
+/allure-results
+/.playwright-mcp
+/.github
+/.vscode
+TEST_STATUS_REPORT.md
+POM_STRUCTURE.md
+chat_test_plan.md
+/.env
+/.env.production
+/.env.dev
+/.env.staging
+playwright/.auth
+/data
