@@ -243,3 +243,23 @@ export function generateUserDetails() {
     "@yopmail.com";
   return { firstName, lastName, email };
 }
+
+export async function displayTestBanner(testInfo,page) {
+  await page.evaluate((testName) => {
+    const banner = document.createElement('div');
+    banner.id = 'playwright-test-banner';
+    banner.innerText = `Running: ${testName}`;
+    banner.style.position = 'fixed';
+    banner.style.bottom = '0';
+    banner.style.left = '0';
+    banner.style.width = '100%';
+    banner.style.backgroundColor = 'red';
+    banner.style.color = 'white';
+    banner.style.zIndex = '999999';
+    banner.style.padding = '10px';
+    banner.style.textAlign = 'center';
+    banner.style.fontSize = '12px';
+    banner.style.fontWeight = 'bold';
+    document.body.prepend(banner);
+  }, testInfo.title);
+}

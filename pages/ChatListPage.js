@@ -6,12 +6,15 @@ export class ChatListPage extends BasePage {
     super(page);
 
     // Header & Navigation Locators
-    this.pageHeading = page.getByRole("heading", { name: /Messages|Archived/i }).first();
+    this.pageHeading = page.getByRole("heading", { name: /Messages/i }).first();
     this.searchTrigger = page.locator("#sidebar i.icon.search").first();
     this.searchInput = page.locator('input[placeholder*="Search Contact" i], input[type="search"]');
+    this.closeSearchInput = page.locator('div.border-bottom.bg-gray > div > i').last()
+    this.archiveSection = page.getByRole("heading", { name: "Archived", exact: true });
+    this.isViewingArchivedChats = false;
 
     // Settings Dropdown Main Toggle
-    this.settingsButton = page.locator("#dropdownBasic1");
+    this.settingsButton = page.locator("#dropdownBasic1").first();
 
     // Settings Menu Options (Inside #dropdownBasic1)
     this.myAccountOption = page.locator("#dropdownSettings");
@@ -21,6 +24,7 @@ export class ChatListPage extends BasePage {
     this.termsAndConditionOption = page.getByText("Terms & Condition").first();
     this.privacyPolicyOption = page.getByText("Privacy & Policy").first();
     this.logoutOption = page.getByText("Logout").first();
+    this.autoReplyOption = page.getByRole("button", { name: "Auto Reply", exact: true });
 
     // New Chat Toggle & Action Locators
     this.newChatButton = page.locator(
@@ -49,9 +53,7 @@ export class ChatListPage extends BasePage {
     this.startButton = page.getByRole("button", { name: "Start", exact: true });
   }
 
-  /**
-   * Locates a specific chat item in the chat list by display text or phone number
-   */
+
   getChatItemByText(text) {
     const value = text.toString();
     const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -63,6 +65,14 @@ export class ChatListPage extends BasePage {
       .filter({ hasText: pattern })
       .locator("xpath=..");
     return chatRow.or(headingContainer).first();
+  }
+
+  getChatRowByText(text) {
+    const value = text.toString();
+    const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const last4 = value.slice(-4).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`${escapedValue}|\\+1\\s*${escapedValue}|${last4}`, "i");
+    return this.chatItems.filter({ hasText: pattern }).first();
   }
 
   async verifyChatListPageLoads() {
@@ -80,6 +90,13 @@ export class ChatListPage extends BasePage {
   async openSettingsMenu() {
     await expect(this.settingsButton).toBeVisible();
     await this.settingsButton.click();
+  }
+
+  async openAutoReplyPage() {
+    await this.openMyAccountSubmenu();
+    await expect(this.autoReplyOption).toBeVisible();
+    await this.autoReplyOption.click();
+    await this.waitForURL(/\/settings\/auto-reply\/?$/);
   }
 
   /**
@@ -146,24 +163,22 @@ export class ChatListPage extends BasePage {
 
   async holdSearchResult(text, duration = 5000) {
     await this.searchChat(text);
-    const chatItem = this.getChatItemByText(text);
-    await expect(chatItem).toBeVisible({ timeout: 15000 });
+    await this.holdChatRow(this.getChatRowByText(text), text, duration);
+  }
 
-    // await chatItem.scrollIntoViewIfNeeded();
+  async holdChatRow(chatItem, text, duration = 5000) {
+    await expect(chatItem).toBeVisible({ timeout: 15000 });
+    await chatItem.scrollIntoViewIfNeeded();
     const box = await chatItem.boundingBox();
     if (!box) throw new Error(`Could not get bounding box for chat item: "${text}"`);
 
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 2;
-
     await this.page.mouse.move(x, y);
     await this.page.mouse.down();
     await this.page.waitForTimeout(duration);
-
-    // move away BEFORE releasing so the up/click doesn't land on the same item
     await this.page.mouse.move(x, y + box.height + 20, { steps: 5 });
     await this.page.mouse.up();
-
     await this.verifySelectionActionsVisible();
   }
 
@@ -194,6 +209,27 @@ export class ChatListPage extends BasePage {
     await this.wait(1000);
   }
 
+  async archiveOrUnarchiveChatFromList(phoneNumber) {
+    const archivedChat = this.getChatRowByText(phoneNumber);
+
+    if (this.isViewingArchivedChats) {
+      if (await this.searchInput.isVisible()) {
+        await this.searchInput.fill("");
+        await this.page.keyboard.press("Enter");
+      }
+      await this.holdChatRow(archivedChat, phoneNumber);
+    } else {
+      await this.holdSearchResult(phoneNumber);
+    }
+
+    await this.selectionActions.nth(1).click();
+
+    if (this.isViewingArchivedChats) {
+      await expect(this.getChatRowByText(phoneNumber)).toBeVisible({ timeout: 15000 });
+      this.isViewingArchivedChats = false;
+    }
+  }
+
   async openFirstChat() {
     await expect(this.chatItems.first()).toBeVisible({ timeout: 5000 });
     await this.chatItems.first().click();
@@ -203,6 +239,13 @@ export class ChatListPage extends BasePage {
     await expect(this.archivedHeading).toBeVisible({ timeout: 5000 });
     await this.archivedHeading.click();
     await expect(this.chatItems.first()).toBeVisible({ timeout: 5000 });
+  }
+
+  async verifyArchivedConversation(text) {
+    await expect(this.archiveSection).toBeVisible({ timeout: 15000 });
+    await this.archiveSection.click();
+    await expect(this.getChatRowByText(text)).toBeVisible({ timeout: 15000 });
+    this.isViewingArchivedChats = true;
   }
 
   async openFirstArchivedChat() {
@@ -250,4 +293,3 @@ export class ChatListPage extends BasePage {
     await this.initiateConversationWith(phoneNumber);
   }
 }
-

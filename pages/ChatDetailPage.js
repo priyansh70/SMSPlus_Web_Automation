@@ -215,7 +215,7 @@ export class ChatDetailPage extends BasePage {
   }
 
   getMessageByText(text) {
-    return this.page.locator("#chatSection").getByText(new RegExp(text, "i")).first();
+    return this.page.locator("#chatSection").getByText(new RegExp(text, "i")).last();
   }
 
   async verifyMessageVisible(text) {

@@ -9,7 +9,7 @@ import {
   completePlanFlow,
 } from "../helpers/appFlow.js";
 
-const createUsersPlan = process.env.CREATE_USERS_PLAN ?? "basic";
+const createUsersPlan = process.env.CREATE_USERS_PLAN ?? "premium";
 const createUsersBilling = process.env.CREATE_USERS_BILLING ?? "monthly";
 
 test.describe("End-to-End Flow Suite", () => {
@@ -17,7 +17,7 @@ test.describe("End-to-End Flow Suite", () => {
     await completeBasicMonthlyFlow(page);
   });
 
-  test.only("5.2 Basic Yearly Subscription", async ({ page }) => {
+  test("5.2 Basic Yearly Subscription", async ({ page }) => {
     await completeBasicYearlyFlow(page);
   });
 
