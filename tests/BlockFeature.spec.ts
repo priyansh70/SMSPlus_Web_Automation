@@ -1,5 +1,5 @@
 import { test as base, expect, type Page } from "@playwright/test";
-import { generateUSNumber } from "../helpers/utils.js";
+import { displayTestBanner, generateUSNumber } from "../helpers/utils.js";
 import { completeFlowForExistingUser } from "../helpers/appFlow.js";
 import { ChatListPage } from "../pages/ChatListPage.js";
 import { ChatDetailPage } from "../pages/ChatDetailPage.js";
@@ -33,23 +33,7 @@ test.describe("Block Feature Suite", () => {
         await chatList.verifyChatListPageLoads();
 
         // Navigate or wait for a page, then inject a visible banner
-        await page.evaluate((testName) => {
-            const banner = document.createElement('div');
-            banner.id = 'playwright-test-banner';
-            banner.innerText = `Running: ${testName}`;
-            banner.style.position = 'fixed';
-            banner.style.bottom = '0';
-            banner.style.left = '0';
-            banner.style.width = '100%';
-            banner.style.backgroundColor = 'red';
-            banner.style.color = 'white';
-            banner.style.zIndex = '999999';
-            banner.style.padding = '10px';
-            banner.style.textAlign = 'center';
-            banner.style.fontSize = '12px';
-            banner.style.fontWeight = 'bold';
-            document.body.prepend(banner);
-        }, testInfo.title);
+        await displayTestBanner(testInfo, page);
 
         await page.waitForTimeout(1000);
     });
